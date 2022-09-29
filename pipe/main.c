@@ -7,6 +7,42 @@
 int main() {
     int nbOctets;
     int descTube[2];
+    int descTube2[2];
+    int pid;
+    const char chaine[] = "message P2 <- P1";
+    const char chaine2[] = "message P2 -> P1";
+    char buffer[BUFSIZ];
+    char buffer2[BUFSIZ];
+    memset(buffer2, '\0', BUFSIZ);
+    memset(buffer, '\0', BUFSIZ);
+    //P1
+    if (pipe(descTube) == 0) {
+        if (pipe(descTube2) == 0) {
+            pid = fork();
+            if (pid == 0) { //P2
+                nbOctets = write(descTube2[1], chaine2, strlen(chaine2));
+                printf("je suis P2 avec %d octets ecrits\n", nbOctets);
+                nbOctets = read(descTube[0], buffer, BUFSIZ);
+                printf("je suis P2 avec %d octets lus || : %s\n", nbOctets, buffer);
+            } else {
+                nbOctets = write(descTube[1], chaine, strlen(chaine));
+                printf("je suis P1 avec %d octets ecrits\n", nbOctets);
+                nbOctets = read(descTube2[0], buffer2, BUFSIZ);
+                printf("je suis P1 avec %d octets lus || : %s\n", nbOctets, buffer2);
+            } 
+
+        }
+    }
+    return 0;
+}
+
+
+
+/*
+ * autre exo 2
+int main() {
+    int nbOctets;
+    int descTube[2];
     int pid;
     const char chaine[] = "message ruru";
     char buffer[BUFSIZ];
@@ -20,13 +56,12 @@ int main() {
         } else //P1
         {
             nbOctets = write(descTube[1], chaine, strlen(chaine));
-            printf("je suis P1: %d octets ecrits\n", nbOctets);
+            printf("je suis P1 avec %d octets ecrits\n", nbOctets);
         }
     }
     return 0;
 }
-
-
+ */
 
 /*
  * exo 2
