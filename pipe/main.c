@@ -1,54 +1,50 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <signal.h>
-#include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <signal.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
-int cpt;
+#define MAXBUFF 255
 
 void traitement(int sig) {
     (void) signal(SIGUSR1, traitement);
     printf("un signal SIGUSR1 je suis pid :%d\n", getpid());
 }
 
-int main(int argc, char *argv[]) {
-    int pid, pidP1, pidP2, pidP3;
+int main(int argc, char** argv) {
     int nbOctets;
     int descTube[2];
-    char buffer[BUFSIZ];
-    (void) signal(SIGUSR1, traitement); // rederoutage des signaux SIGUSR1
-    memset(buffer, '\0', BUFSIZ);
+    int pid, pidP1, pidP2, pidP3;
+    char chaine[] = "message en provenance de p3";
+    char buffer[MAXBUFF] = {0};
+    memset(buffer, '\0', MAXBUFF);
+    (void) signal(SIGUSR1, traitement);
     //P1
-    pidP1 = getpid();
-    printf("debut pid p1: %d\n", pidP1);
-    // vers la fonction traitement
     if (pipe(descTube) == 0) {
         pid = fork();
-        if (pid == 0) // P2
-        {
+        if (pid == 0) { //P2
             pid = fork();
-            if (pid == 0) //P3
-            {
-                pidP3 = pid;
-                printf("p3 pid=%d\n", getpid());
-                sleep(3);
-                nbOctets = write(descTube[1], &pidP3, sizeof (pidP3));
-                printf("je suis P3 avec %d octets ecrits\n", nbOctets);
-            } else //P2
-            {
-                printf("p2 pid=%d\n", getpid());
+            if (pid == 0) { //P3
+                pidP3 = getpid();
+                printf("pid P3 : %d\n", pidP3);
+                
+                nbOctets = write(descTube[1], &pidP3, sizeof(int));
+                printf("je suis P3 : %d octets ecrits\n", nbOctets);
                 pause();
-                sleep(5);
+            } else { //P2
+                pidP2 = getpid();
+                printf("pid P2 : %d\n", pidP2);
+                
+                pause();
             }
-
-        } else // P1
-        {
+        } else { //P1
             pidP1 = getpid();
             printf("pid P1 : %d\n", pidP1);
             
-            nbOctets = read(descTube[0], &pidP3, BUFSIZ);
+            nbOctets = read(descTube[0], &pidP3, MAXBUFF);
             printf("je suis P1 : octets lus : %d: %s\n", nbOctets, buffer);
             
             sleep(2);
@@ -60,7 +56,6 @@ int main(int argc, char *argv[]) {
     }
     return EXIT_SUCCESS;
 }
-
 
 
 /*
