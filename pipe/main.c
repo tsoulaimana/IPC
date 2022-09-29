@@ -1,14 +1,68 @@
-#include <unistd.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
-#include <signal.h>
-#include <errno.h>
+#include <stdlib.h>
 #include <sys/types.h>
-#include <sys/wait.h>
+#include <signal.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
 
-#define MAXBUFF 255
 
+int cpt;
+
+void traitement(int sig) {
+    (void) signal(SIGUSR1, traitement);
+    printf("un signal SIGUSR1 je suis pid: %d\n", getpid());
+}
+
+int main(int argc, char *argv[]) {
+    int pid, pidP1, pidP2, pidP3;
+    int nbOctets;
+    int descTube[2];
+    char buffer[BUFSIZ];
+    (void) signal(SIGUSR1, traitement); // rederoutage des signaux SIGUSR1
+    memset(buffer, '\0', BUFSIZ);
+    //P1
+    pidP1 = getpid();
+    printf("debut pid p1: %d\n", pidP1);
+    // vers la fonction traitement
+    if (pipe(descTube) == 0) {
+        pid = fork();
+        if (pid == 0) // P2
+        {
+            pid = fork();
+            if (pid == 0) //P3
+            {
+                printf("p3 pid=%d\n", getpid());
+                nbOctets = write(descTube[1], &pidP3, sizeof (pidP3));
+                printf("je suis P3 avec %d octets ecrits\n", nbOctets);
+                pause();
+            } else //P2
+            {
+                printf("p2 pid=%d\n", getpid());
+                pause();
+
+            }
+
+        } else // P1
+        {
+           pidP1 = getpid();
+            printf("pid P1 : %d\n", pidP1);
+            
+            nbOctets = read(descTube[0], &pidP3, BUFSIZ);
+            printf("je suis P1 : octets lus : %d %s\n", nbOctets, buffer);
+            
+            sleep(2);
+            pidP2 = pid;
+            kill(pidP2, SIGUSR1);
+            sleep(2);
+            kill(pidP3, SIGUSR1);
+        }
+    }
+    return EXIT_SUCCESS;
+}
+
+/*
+ * correction discord exo 4
 void traitement(int sig) {
     (void) signal(SIGUSR1, traitement);
     printf("un signal SIGUSR1 je suis pid :%d\n", getpid());
@@ -56,8 +110,7 @@ int main(int argc, char** argv) {
     }
     return EXIT_SUCCESS;
 }
-
-
+*/
 /*
  * exo 3
 int main() {
